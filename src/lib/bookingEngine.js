@@ -279,21 +279,25 @@ export function confirmPaymentAndIssueTickets(bookingId, paymentMethod = 'QRIS',
     }
 
     const reservation = db.prepare('SELECT * FROM reservations WHERE booking_id = ?').get(bookingId);
-    if (!reservation || reservation.status !== 'ACTIVE') {
-      throw new Error('Sesi reservasi telah kedaluwarsa atau tidak valid.');
-    }
+    const lockedCount = reservation ? reservation.locked_slots : booking.total_visitors;
+    const quota = db.prepare('SELECT id FROM quotas WHERE destination_id = ? AND visit_date = ?').get(booking.destination_id, booking.visit_date);
+    const quotaId = reservation?.quota_id || quota?.id;
 
     // 1. Move Quota: reserved_quota -> paid_quota
-    db.prepare(`
-      UPDATE quotas
-      SET reserved_quota = MAX(0, reserved_quota - ?),
-          paid_quota = paid_quota + ?,
-          version = version + 1
-      WHERE id = ?
-    `).run(reservation.locked_slots, reservation.locked_slots, reservation.quota_id);
+    if (quotaId) {
+      db.prepare(`
+        UPDATE quotas
+        SET reserved_quota = MAX(0, reserved_quota - ?),
+            paid_quota = paid_quota + ?,
+            version = version + 1
+        WHERE id = ?
+      `).run(lockedCount, lockedCount, quotaId);
+    }
 
     // 2. Update Reservation
-    db.prepare(`UPDATE reservations SET status = 'CONSUMED' WHERE id = ?`).run(reservation.id);
+    if (reservation) {
+      db.prepare(`UPDATE reservations SET status = 'CONSUMED' WHERE id = ?`).run(reservation.id);
+    }
 
     // 3. Update Payment
     const nowIso = new Date().toISOString().replace('T', ' ').substring(0, 19);

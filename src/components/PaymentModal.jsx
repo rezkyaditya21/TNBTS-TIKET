@@ -11,19 +11,15 @@ export default function PaymentModal({ isOpen, onClose, reservationData, onPayme
   const [paymentMethod, setPaymentMethod] = useState('QRIS');
 
   useEffect(() => {
-    if (!isOpen || !reservationData?.expiresAt) return;
+    if (!isOpen) return;
+    setTimeLeft(15 * 60);
 
-    const expiresTime = new Date(reservationData.expiresAt).getTime();
     const interval = setInterval(() => {
-      const remaining = Math.max(0, Math.floor((expiresTime - Date.now()) / 1000));
-      setTimeLeft(remaining);
-      if (remaining <= 0) {
-        clearInterval(interval);
-      }
+      setTimeLeft((prev) => (prev > 0 ? prev - 1 : 0));
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [isOpen, reservationData]);
+  }, [isOpen]);
 
   if (!isOpen || !reservationData) return null;
 
@@ -184,7 +180,8 @@ export default function PaymentModal({ isOpen, onClose, reservationData, onPayme
           {/* Instant Sandbox Payment Confirmation Button */}
           <div className="pt-2">
             <button
-              disabled={isProcessing || timeLeft <= 0}
+              type="button"
+              disabled={isProcessing}
               onClick={handleSimulatePayment}
               className="w-full py-3.5 px-4 rounded-xl bg-gradient-to-r from-emerald-500 via-emerald-400 to-teal-400 hover:from-emerald-400 hover:to-teal-300 text-slate-950 font-black text-sm flex items-center justify-center gap-2 shadow-xl shadow-emerald-500/30 transition-all hover:scale-[1.02] active:scale-[0.98] cursor-pointer"
             >
