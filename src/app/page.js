@@ -9,6 +9,9 @@ import BookingWizardModal from '@/components/BookingWizardModal.jsx';
 import PaymentModal from '@/components/PaymentModal.jsx';
 import TicketViewModal from '@/components/TicketViewModal.jsx';
 import AuthModal from '@/components/AuthModal.jsx';
+import WeatherWidget from '@/components/WeatherWidget.jsx';
+import QuotaCalendarSection from '@/components/QuotaCalendarSection.jsx';
+import FAQSection from '@/components/FAQSection.jsx';
 import { Shield, Sparkles, CheckCircle2, AlertTriangle, HelpCircle, Phone, Mail, Compass, ArrowRight } from 'lucide-react';
 
 export default function HomePage() {
@@ -103,10 +106,19 @@ export default function HomePage() {
         systemNotice={systemNotice}
       />
 
+      {/* Live Climatology & Volcanic Status Widget */}
+      <WeatherWidget />
+
       {/* Destinations Catalog */}
       <DestinationsCatalog
         destinations={destinations}
         onSelectDestination={(id) => handleStartBooking(id, new Date().toISOString().split('T')[0])}
+      />
+
+      {/* 14-Day Quota Calendar Grid */}
+      <QuotaCalendarSection
+        destinations={destinations}
+        onSelectDateAndDestination={handleStartBooking}
       />
 
       {/* Anti-Scalper Security Pillars */}
@@ -142,6 +154,9 @@ export default function HomePage() {
           ))}
         </div>
       </section>
+
+      {/* Interactive FAQ Accordion */}
+      <FAQSection />
 
       {/* Rules & Guidelines */}
       <section id="informasi" className="py-16 px-4 sm:px-6 lg:px-8 max-w-5xl mx-auto">

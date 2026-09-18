@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { X, Clock, QrCode, CreditCard, ShieldCheck, CheckCircle2, Sparkles, Copy, Check } from 'lucide-react';
+import confetti from 'canvas-confetti';
 
 export default function PaymentModal({ isOpen, onClose, reservationData, onPaymentSuccess }) {
   const [timeLeft, setTimeLeft] = useState(15 * 60); // 15 mins in seconds
@@ -56,6 +57,16 @@ export default function PaymentModal({ isOpen, onClose, reservationData, onPayme
       if (!res.ok || !data.success) {
         throw new Error(data.message || 'Gagal memproses pembayaran.');
       }
+
+      // Celebrate with gold & emerald confetti shower!
+      try {
+        confetti({
+          particleCount: 80,
+          spread: 70,
+          origin: { y: 0.6 },
+          colors: ['#f59e0b', '#10b981', '#ffffff', '#fbbf24'],
+        });
+      } catch (e) {}
 
       onPaymentSuccess(data.data);
     } catch (err) {
