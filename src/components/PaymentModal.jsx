@@ -186,13 +186,13 @@ export default function PaymentModal({ isOpen, onClose, reservationData, onPayme
             <button
               disabled={isProcessing || timeLeft <= 0}
               onClick={handleSimulatePayment}
-              className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-emerald-500 to-emerald-400 hover:from-emerald-400 hover:to-emerald-300 text-slate-950 font-extrabold text-xs flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/25 transition-all hover:scale-[1.02]"
+              className="w-full py-3.5 px-4 rounded-xl bg-gradient-to-r from-emerald-500 via-emerald-400 to-teal-400 hover:from-emerald-400 hover:to-teal-300 text-slate-950 font-black text-sm flex items-center justify-center gap-2 shadow-xl shadow-emerald-500/30 transition-all hover:scale-[1.02] active:scale-[0.98] cursor-pointer"
             >
-              <CheckCircle2 className="w-4 h-4" />
-              <span>{isProcessing ? 'Memverifikasi Pembayaran...' : 'Konfirmasi Pembayaran Lunas (Simulasi)'}</span>
+              <CheckCircle2 className="w-5 h-5 stroke-[2.5]" />
+              <span>{isProcessing ? 'Menerbitkan Tiket...' : '⚡ Konfirmasi Pembayaran (Simulasi Langsung)'}</span>
             </button>
-            <p className="text-[10px] text-slate-500 mt-2">
-              Lingkungan Sandbox: Klik tombol di atas untuk mensimulasikan pelunasan dan menerbitkan tiket secara instan.
+            <p className="text-[11px] text-emerald-400/90 mt-2 font-medium">
+              Mode Simulasi Aktif: Klik tombol hijau di atas untuk langsung melunasi dan menerbitkan E-Ticket resmi seketika.
             </p>
           </div>
 

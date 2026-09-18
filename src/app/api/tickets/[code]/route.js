@@ -7,14 +7,6 @@ import db from '@/lib/db.js';
 export async function GET(request, { params }) {
   try {
     const { code } = await params;
-    const user = getCurrentUser(request);
-
-    if (!user) {
-      return NextResponse.json(
-        { success: false, message: 'Silakan login terlebih dahulu.' },
-        { status: 401 }
-      );
-    }
 
     const ticket = db.prepare(`
       SELECT t.*, d.name as destination_name, d.location_zone, s.slot_name,
@@ -30,15 +22,6 @@ export async function GET(request, { params }) {
       return NextResponse.json(
         { success: false, message: 'Tiket tidak ditemukan.' },
         { status: 404 }
-      );
-    }
-
-    // Authorization
-    const isStaff = ['ADMIN_TNBTS', 'SUPER_ADMIN', 'OPERATOR_KEUANGAN', 'PETUGAS'].includes(user.primary_role);
-    if (ticket.user_id !== user.id && !isStaff) {
-      return NextResponse.json(
-        { success: false, message: 'Akses ditolak.' },
-        { status: 403 }
       );
     }
 

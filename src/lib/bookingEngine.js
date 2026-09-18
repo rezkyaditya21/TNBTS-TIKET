@@ -273,7 +273,10 @@ export function confirmPaymentAndIssueTickets(bookingId, paymentMethod = 'QRIS',
   const confirmTx = db.transaction(() => {
     const booking = db.prepare('SELECT * FROM bookings WHERE id = ?').get(bookingId);
     if (!booking) throw new Error('Booking tidak ditemukan.');
-    if (booking.status === 'PAID') return { alreadyPaid: true, bookingCode: booking.booking_code };
+    if (booking.status === 'PAID') {
+      const existingTickets = db.prepare('SELECT ticket_code as ticketCode, visitor_name as visitorName, identity_number as identityNumber FROM tickets WHERE booking_id = ?').all(bookingId);
+      return { alreadyPaid: true, bookingCode: booking.booking_code, issuedTickets: existingTickets };
+    }
 
     const reservation = db.prepare('SELECT * FROM reservations WHERE booking_id = ?').get(bookingId);
     if (!reservation || reservation.status !== 'ACTIVE') {
