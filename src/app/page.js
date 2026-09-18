@@ -90,6 +90,24 @@ export default function HomePage() {
         systemStatus={systemStatus}
       />
 
+      {/* Staff Alert Banner */}
+      {currentUser && ['PETUGAS', 'ADMIN_TNBTS', 'SUPER_ADMIN'].includes(currentUser.role) && (
+        <div className="bg-gradient-to-r from-emerald-950 via-slate-900 to-indigo-950 border-b border-emerald-500/30 px-4 py-2.5 text-xs flex flex-wrap items-center justify-between gap-2 z-20 relative">
+          <div className="flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
+            <span className="text-slate-300">
+              Anda terautentikasi sebagai <strong className="text-amber-400 uppercase">{currentUser.role === 'PETUGAS' ? 'Petugas Ranger Gerbang' : 'Pengelola Balai TNBTS'}</strong> ({currentUser.name})
+            </span>
+          </div>
+          <Link
+            href={currentUser.role === 'PETUGAS' ? '/scanner' : '/admin'}
+            className="px-3 py-1 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs transition"
+          >
+            {currentUser.role === 'PETUGAS' ? 'Buka Scanner Lapangan →' : 'Buka Pusat Kontrol Balai →'}
+          </Link>
+        </div>
+      )}
+
       {/* Hero Section */}
       <HeroSection
         destinations={destinations}
@@ -219,6 +237,11 @@ export default function HomePage() {
         onClose={() => setIsAuthOpen(false)}
         onAuthSuccess={(user) => {
           setCurrentUser(user);
+          if (user.role === 'PETUGAS') {
+            router.push('/scanner');
+          } else if (['ADMIN_TNBTS', 'SUPER_ADMIN', 'OPERATOR_KEUANGAN'].includes(user.role)) {
+            router.push('/admin');
+          }
         }}
       />
 
