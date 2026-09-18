@@ -1,13 +1,12 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import Navbar from '@/components/Navbar.jsx';
 import HeroSection from '@/components/HeroSection.jsx';
 import DestinationsCatalog from '@/components/DestinationsCatalog.jsx';
 import AntiScalperFeatureSection from '@/components/AntiScalperFeatureSection.jsx';
-import BookingWizardModal from '@/components/BookingWizardModal.jsx';
-import PaymentModal from '@/components/PaymentModal.jsx';
-import TicketViewModal from '@/components/TicketViewModal.jsx';
 import AuthModal from '@/components/AuthModal.jsx';
 import WeatherWidget from '@/components/WeatherWidget.jsx';
 import QuotaCalendarSection from '@/components/QuotaCalendarSection.jsx';
@@ -15,6 +14,7 @@ import FAQSection from '@/components/FAQSection.jsx';
 import { Shield, Sparkles, CheckCircle2, AlertTriangle, HelpCircle, Phone, Mail, Compass, ArrowRight } from 'lucide-react';
 
 export default function HomePage() {
+  const router = useRouter();
   const [currentUser, setCurrentUser] = useState(null);
   const [destinations, setDestinations] = useState([]);
   const [systemStatus, setSystemStatus] = useState('OPEN');
@@ -22,11 +22,6 @@ export default function HomePage() {
 
   // Modals state
   const [isAuthOpen, setIsAuthOpen] = useState(false);
-  const [isBookingOpen, setIsBookingOpen] = useState(false);
-  const [selectedBookingDestId, setSelectedBookingDestId] = useState('');
-  const [selectedBookingDate, setSelectedBookingDate] = useState('');
-  const [reservationPayload, setReservationPayload] = useState(null);
-  const [activeTicketCode, setActiveTicketCode] = useState(null);
 
   // Load Current User & Destinations
   useEffect(() => {
@@ -77,13 +72,10 @@ export default function HomePage() {
   };
 
   const handleStartBooking = (destId, date) => {
-    if (!currentUser) {
-      setIsAuthOpen(true);
-      return;
-    }
-    setSelectedBookingDestId(destId);
-    setSelectedBookingDate(date);
-    setIsBookingOpen(true);
+    const params = new URLSearchParams();
+    if (destId) params.set('destination', destId);
+    if (date) params.set('date', date);
+    router.push(`/booking?${params.toString()}`);
   };
 
   return (
@@ -176,22 +168,22 @@ export default function HomePage() {
             </div>
             <div className="flex items-start gap-2.5">
               <span className="w-5 h-5 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0 font-bold">2</span>
-              <span>Dilarang keras menyalakan api unggun, kembang api, petasan, atau flare di seluruh kawasan kaldera & savana.</span>
+              <span>Dilarang keras membawa flare, petasan, kembang api, atau menyalakan api unggun di area lautan pasir dan savana.</span>
             </div>
             <div className="flex items-start gap-2.5">
               <span className="w-5 h-5 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0 font-bold">3</span>
-              <span>Batas aman pendakian kawah Bromo adalah radius 1 km dari bibir kawah aktif pada status Waspada Level II.</span>
+              <span>Batas aman kunjungan kawah aktif Bromo adalah radius 1 km dari bibir kawah (Level II Waspada PVMBG).</span>
             </div>
             <div className="flex items-start gap-2.5">
               <span className="w-5 h-5 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0 font-bold">4</span>
-              <span>Bawa kembali sampah Anda (*Zero Waste*). Pelanggar jalur tikus akan dijatuhi sanksi blacklist kawasan konservasi se-Indonesia.</span>
+              <span>Jaga kebersihan kawasan dengan membawa kembali sampah Anda (Leave No Trace).</span>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="mt-auto border-t border-slate-900 bg-slate-950/80 py-12 px-4 sm:px-6 lg:px-8">
+      {/* Official Government Footer */}
+      <footer className="border-t border-slate-800/80 bg-slate-950 py-12 px-4 sm:px-6 lg:px-8 mt-auto">
         <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-6">
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-xl bg-amber-500 flex items-center justify-center text-slate-950">
@@ -203,14 +195,25 @@ export default function HomePage() {
             </div>
           </div>
 
+          {/* Internal Staff Portals */}
+          <div className="flex items-center gap-3 text-xs text-slate-400">
+            <Link href="/scanner" className="hover:text-emerald-400 transition font-medium">
+              Pos Petugas Gerbang
+            </Link>
+            <span>•</span>
+            <Link href="/admin" className="hover:text-amber-400 transition font-medium">
+              Pengelola Balai TNBTS
+            </Link>
+          </div>
+
           <div className="text-center sm:text-right text-xs text-slate-500 space-y-1">
             <p>© 2026 Balai Besar Taman Nasional Bromo Tengger Semeru.</p>
-            <p>Sistem Pemesanan Tiket Online Anti-Monopoli &amp; Anti-Calo.</p>
+            <p>Portal Resmi Pemesanan Tiket Online Anti-Calo.</p>
           </div>
         </div>
       </footer>
 
-      {/* MODALS */}
+      {/* AUTH MODAL */}
       <AuthModal
         isOpen={isAuthOpen}
         onClose={() => setIsAuthOpen(false)}
@@ -218,43 +221,6 @@ export default function HomePage() {
           setCurrentUser(user);
         }}
       />
-
-      <BookingWizardModal
-        isOpen={isBookingOpen}
-        onClose={() => setIsBookingOpen(false)}
-        initialDestinationId={selectedBookingDestId}
-        initialDate={selectedBookingDate}
-        destinations={destinations}
-        onBookingSuccess={(resData) => {
-          setIsBookingOpen(false);
-          setReservationPayload(resData);
-        }}
-      />
-
-      {reservationPayload && (
-        <PaymentModal
-          isOpen={Boolean(reservationPayload)}
-          onClose={() => setReservationPayload(null)}
-          reservationData={reservationPayload}
-          onPaymentSuccess={async (paymentResult) => {
-            setReservationPayload(null);
-            if (paymentResult.issuedTickets?.length > 0) {
-              setActiveTicketCode(paymentResult.issuedTickets[0].ticketCode);
-            }
-          }}
-        />
-      )}
-
-      {activeTicketCode && (
-        <TicketViewModal
-          isOpen={Boolean(activeTicketCode)}
-          onClose={() => setActiveTicketCode(null)}
-          ticketCode={activeTicketCode}
-          onOpenScannerWithTicket={(code, token) => {
-            window.location.href = `/scanner`;
-          }}
-        />
-      )}
 
     </div>
   );

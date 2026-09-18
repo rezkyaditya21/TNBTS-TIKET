@@ -1,18 +1,9 @@
 import { NextResponse } from 'next/server';
-import { getCurrentUser } from '@/lib/auth.js';
 import db from '@/lib/db.js';
 
 export async function GET(request, { params }) {
   try {
     const { id } = await params;
-    const user = getCurrentUser(request);
-
-    if (!user) {
-      return NextResponse.json(
-        { success: false, message: 'Silakan login terlebih dahulu.' },
-        { status: 401 }
-      );
-    }
 
     const booking = db.prepare(`
       SELECT b.*, d.name as destination_name, d.location_zone, s.slot_name,
@@ -30,15 +21,6 @@ export async function GET(request, { params }) {
       return NextResponse.json(
         { success: false, message: 'Pesanan tidak ditemukan.' },
         { status: 404 }
-      );
-    }
-
-    // Authorization: User can only see their own booking unless staff/admin
-    const isStaff = ['ADMIN_TNBTS', 'SUPER_ADMIN', 'OPERATOR_KEUANGAN', 'PETUGAS'].includes(user.primary_role);
-    if (booking.user_id !== user.id && !isStaff) {
-      return NextResponse.json(
-        { success: false, message: 'Akses ditolak.' },
-        { status: 403 }
       );
     }
 
