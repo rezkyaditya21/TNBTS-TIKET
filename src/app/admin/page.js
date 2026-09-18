@@ -8,7 +8,7 @@ import {
 } from 'lucide-react';
 
 export default function AdminDashboardPage() {
-  const [data, setData] = useState(null);
+  const [dashboardData, setDashboardData] = useState(null);
   const [securityEvents, setSecurityEvents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('overview'); // overview | quotas | security | bookings
@@ -30,7 +30,7 @@ export default function AdminDashboardPage() {
       const secData = await secRes.json();
       const settingsData = await setRes.json();
 
-      if (dashData.success) setData(dashData);
+      if (dashData.success) setDashboardData(dashData);
       if (secData.success) setSecurityEvents(secData.events || []);
       if (settingsData.success) {
         const sk = settingsData.settings?.find(s => s.key === 'status_kawasan')?.value || 'OPEN';
@@ -149,7 +149,7 @@ export default function AdminDashboardPage() {
           </button>
         </div>
 
-        {loading && !data ? (
+        {loading && !dashboardData ? (
           <div className="py-24 text-center text-slate-400 animate-pulse text-sm">
             Memuat data telemetri operasional...
           </div>
@@ -240,10 +240,10 @@ export default function AdminDashboardPage() {
                       <Users className="w-4 h-4 text-emerald-400" />
                     </div>
                     <div className="text-3xl font-black text-white font-mono mt-2">
-                      {data?.stats?.paidVisitors || 0} <span className="text-xs font-normal text-slate-400">orang</span>
+                      {dashboardData?.stats?.paidVisitors || 0} <span className="text-xs font-normal text-slate-400">orang</span>
                     </div>
                     <div className="text-[11px] text-emerald-400 mt-1 font-semibold">
-                      {data?.stats?.paidBookings || 0} transaksi lunas
+                      {dashboardData?.stats?.paidBookings || 0} transaksi lunas
                     </div>
                   </div>
 
@@ -253,7 +253,7 @@ export default function AdminDashboardPage() {
                       <DollarSign className="w-4 h-4 text-amber-400" />
                     </div>
                     <div className="text-2xl font-black text-amber-400 font-mono mt-2">
-                      {formatIDR(data?.stats?.totalRevenue || 0)}
+                      {formatIDR(dashboardData?.stats?.totalRevenue || 0)}
                     </div>
                     <div className="text-[11px] text-slate-400 mt-1">
                       Setoran langsung kas negara
@@ -266,7 +266,7 @@ export default function AdminDashboardPage() {
                       <Ticket className="w-4 h-4 text-cyan-400" />
                     </div>
                     <div className="text-3xl font-black text-cyan-300 font-mono mt-2">
-                      {data?.stats?.scannedToday || 0} <span className="text-xs font-normal text-slate-400">tiket</span>
+                      {dashboardData?.stats?.scannedToday || 0} <span className="text-xs font-normal text-slate-400">tiket</span>
                     </div>
                     <div className="text-[11px] text-cyan-400 mt-1 font-semibold">
                       Terverifikasi di gerbang
@@ -279,7 +279,7 @@ export default function AdminDashboardPage() {
                       <ShieldAlert className="w-4 h-4 text-rose-400" />
                     </div>
                     <div className="text-3xl font-black text-rose-400 font-mono mt-2">
-                      {data?.stats?.suspiciousEvents || 0}
+                      {dashboardData?.stats?.suspiciousEvents || 0}
                     </div>
                     <div className="text-[11px] text-rose-400 mt-1 font-semibold">
                       Perlu ditinjau pengelola
@@ -297,7 +297,7 @@ export default function AdminDashboardPage() {
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {data?.quotaSummary?.map((q, idx) => {
+                    {dashboardData?.quotaSummary?.map((q, idx) => {
                       const usedPercent = Math.min(100, Math.round(((q.reserved_quota + q.paid_quota) / q.total_quota) * 100));
                       return (
                         <div key={idx} className="p-4 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-2.5">
@@ -346,7 +346,7 @@ export default function AdminDashboardPage() {
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-800/60">
-                        {data?.recentBookings?.map((b) => (
+                        {dashboardData?.recentBookings?.map((b) => (
                           <tr key={b.id} className="hover:bg-slate-900/40 transition">
                             <td className="py-3 font-mono font-bold text-amber-300">{b.booking_code}</td>
                             <td className="py-3">
