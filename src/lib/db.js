@@ -368,7 +368,22 @@ export function initDatabase() {
     CREATE INDEX IF NOT EXISTS idx_bookings_user ON bookings(user_id);
     CREATE INDEX IF NOT EXISTS idx_audit_created ON audit_logs(created_at);
     CREATE INDEX IF NOT EXISTS idx_visitors_nik ON booking_visitors(identity_number);
+
+    -- 9. PERSISTENT RATE LIMITER
+    CREATE TABLE IF NOT EXISTS rate_limit_entries (
+      key TEXT NOT NULL,
+      count INTEGER DEFAULT 1,
+      window_start INTEGER NOT NULL,
+      window_ms INTEGER NOT NULL,
+      PRIMARY KEY (key)
+    );
   `);
+}
+
+// Auto-initialize all tables on first server start
+if (!global.__tnbts_db_initialized) {
+  global.__tnbts_db_initialized = true;
+  try { initDatabase(); } catch (e) { console.error('DB init error:', e); }
 }
 
 export default db;

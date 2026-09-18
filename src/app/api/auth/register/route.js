@@ -57,11 +57,11 @@ export async function POST(request) {
     });
 
     response.cookies.set('tnbts_token', token, {
-      httpOnly: false,
+      httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
+      sameSite: 'strict',
       path: '/',
-      maxAge: 60 * 60 * 24 * 7,
+      maxAge: 60 * 60 * 24,
     });
 
     return response;

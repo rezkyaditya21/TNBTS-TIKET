@@ -7,11 +7,30 @@ export default function BookingWizardModal({ isOpen, onClose, initialDestination
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
+  const [showExitConfirm, setShowExitConfirm] = useState(false);
+
+  const handleClose = () => {
+    if (step >= 2) {
+      setShowExitConfirm(true);
+    } else {
+      onClose();
+    }
+  };
+
+  const handleConfirmExit = () => {
+    setShowExitConfirm(false);
+    onClose();
+  };
 
   // Form State
   const [destinationId, setDestinationId] = useState(initialDestinationId || destinations[0]?.id || '');
   const [slotId, setSlotId] = useState('');
-  const [visitDate, setVisitDate] = useState(initialDate || new Date().toISOString().split('T')[0]);
+  const [visitDate, setVisitDate] = useState(() => {
+    const d = new Date();
+    d.setDate(d.getDate() + 2);
+    const minD = d.toISOString().split('T')[0];
+    return initialDate && initialDate >= minD ? initialDate : minD;
+  });
   const [entranceGate, setEntranceGate] = useState('CEMORO_LAWANG');
   const [vehicleType, setVehicleType] = useState('JEEP');
   const [vehiclePlateNumber, setVehiclePlateNumber] = useState('');
@@ -26,6 +45,13 @@ export default function BookingWizardModal({ isOpen, onClose, initialDestination
 
   // Behavioral timing metric
   const [modalOpenedAt] = useState(Date.now());
+
+  // H-2 minimum date
+  const minDate = (() => {
+    const d = new Date();
+    d.setDate(d.getDate() + 2);
+    return d.toISOString().split('T')[0];
+  })();
 
   useEffect(() => {
     if (initialDestinationId) setDestinationId(initialDestinationId);
@@ -141,8 +167,24 @@ export default function BookingWizardModal({ isOpen, onClose, initialDestination
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-in fade-in">
-      <div className="relative w-full max-w-2xl glass-panel rounded-3xl border border-slate-700 shadow-2xl overflow-hidden flex flex-col max-h-[92vh]">
-        
+      {/* Exit confirmation dialog */}
+      {showExitConfirm && (
+        <div className="absolute inset-0 z-10 flex items-center justify-center bg-slate-950/70 backdrop-blur-sm">
+          <div className="w-full max-w-sm glass-panel p-6 rounded-2xl border border-slate-700 shadow-2xl text-center space-y-4">
+            <div className="text-base font-bold text-white">Batalkan Pemesanan?</div>
+            <p className="text-xs text-slate-400">Data yang sudah Anda isi akan hilang. Yakin ingin membatalkan?</p>
+            <div className="flex gap-3">
+              <button onClick={() => setShowExitConfirm(false)} className="flex-1 py-2.5 rounded-xl border border-slate-700 text-slate-300 text-xs font-bold hover:bg-slate-800 transition">
+                Tetap di Sini
+              </button>
+              <button onClick={handleConfirmExit} className="flex-1 py-2.5 rounded-xl bg-rose-500 hover:bg-rose-400 text-white text-xs font-bold transition">
+                Batalkan
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      <div className="relative w-full max-w-2xl glass-panel rounded-3xl border border-slate-700 shadow-2xl overflow-hidden flex flex-col max-h-[92vh]">        
         {/* Modal Header */}
         <div className="p-5 border-b border-slate-800 flex items-center justify-between bg-slate-900/60">
           <div>
@@ -157,7 +199,7 @@ export default function BookingWizardModal({ isOpen, onClose, initialDestination
             </h3>
           </div>
           <button
-            onClick={onClose}
+            onClick={handleClose}
             className="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition"
           >
             <X className="w-5 h-5" />
@@ -206,7 +248,7 @@ export default function BookingWizardModal({ isOpen, onClose, initialDestination
                   </label>
                   <input
                     type="date"
-                    min={new Date().toISOString().split('T')[0]}
+                    min={minDate}
                     value={visitDate}
                     onChange={(e) => setVisitDate(e.target.value)}
                     className="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-sm font-semibold text-white focus:outline-none focus:border-amber-400"

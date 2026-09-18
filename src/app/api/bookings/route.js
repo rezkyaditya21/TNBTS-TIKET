@@ -37,6 +37,21 @@ export async function POST(request) {
       sessionId,
     } = body;
 
+    // H-2 server-side validation (WIB = UTC+7)
+    if (visitDate) {
+      const today = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Jakarta' }));
+      today.setHours(0, 0, 0, 0);
+      const minDate = new Date(today);
+      minDate.setDate(minDate.getDate() + 2);
+      const visit = new Date(visitDate + 'T00:00:00');
+      if (visit < minDate) {
+        return NextResponse.json(
+          { success: false, message: 'Pemesanan hanya dapat dilakukan minimal 2 hari sebelum tanggal kunjungan sesuai aturan operasional TNBTS.' },
+          { status: 400 }
+        );
+      }
+    }
+
     const reservation = createBookingReservation({
       userId: user.id,
       userEmail: user.email,

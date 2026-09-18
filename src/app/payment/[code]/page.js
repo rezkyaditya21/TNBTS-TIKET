@@ -16,7 +16,8 @@ export default function PaymentPage({ params }) {
   const [isProcessing, setIsProcessing] = useState(false);
   const [copied, setCopied] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState('QRIS');
-  const [timeLeft, setTimeLeft] = useState(15 * 60);
+  const [timeLeft, setTimeLeft] = useState(null); // null until loaded from server
+  const [qrDataUrl, setQrDataUrl] = useState(null);
 
   useEffect(() => {
     async function loadBooking() {
@@ -25,9 +26,27 @@ export default function PaymentPage({ params }) {
         const data = await res.json();
         if (data.success && data.booking) {
           setBooking(data.booking);
+          // Sync countdown from server expiresAt
+          if (data.booking.reservation_expires_at) {
+            const msLeft = new Date(data.booking.reservation_expires_at).getTime() - Date.now();
+            setTimeLeft(Math.max(0, Math.floor(msLeft / 1000)));
+          } else {
+            setTimeLeft(15 * 60);
+          }
           // If already paid and has tickets, redirect straight to ticket
           if (data.booking.status === 'PAID' && data.booking.tickets?.length > 0) {
             router.push(`/ticket/${data.booking.tickets[0].ticket_code}`);
+          }
+          // Generate QRIS locally from qr_string using canvas
+          if (data.booking.qr_string) {
+            try {
+              const QRCode = (await import('qrcode')).default;
+              const url = await QRCode.toDataURL(data.booking.qr_string, {
+                errorCorrectionLevel: 'M', margin: 2, width: 220,
+                color: { dark: '#0f172a', light: '#ffffff' },
+              });
+              setQrDataUrl(url);
+            } catch {}
           }
         }
       } catch (err) {
@@ -39,18 +58,21 @@ export default function PaymentPage({ params }) {
     loadBooking();
   }, [bookingCode, router]);
 
-  // 15-min countdown timer
+  // Countdown timer — synced with server expiresAt
   useEffect(() => {
+    if (timeLeft === null) return;
+    if (timeLeft <= 0) return;
     const interval = setInterval(() => {
       setTimeLeft((prev) => (prev > 0 ? prev - 1 : 0));
     }, 1000);
     return () => clearInterval(interval);
-  }, []);
+  }, [timeLeft !== null]);
 
   const formatIDR = (val) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(val);
-  const minutes = Math.floor(timeLeft / 60);
-  const seconds = timeLeft % 60;
-  const timeFormatted = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+  const minutes = Math.floor((timeLeft ?? 0) / 60);
+  const seconds = (timeLeft ?? 0) % 60;
+  const timeFormatted = timeLeft === null ? '--:--' : `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+  const isExpired = timeLeft === 0;
 
   const handleCopyVA = () => {
     if (booking?.payment_code) {
@@ -153,8 +175,11 @@ export default function PaymentPage({ params }) {
         <div className="glass-panel p-5 rounded-3xl border border-slate-800 text-center space-y-2">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/30 text-xs font-bold">
             <Clock className="w-3.5 h-3.5" />
-            <span>Sisa Waktu Pelunasan: <span className="font-mono text-white font-extrabold">{timeFormatted}</span></span>
+            <span>Sisa Waktu Pelunasan: <span className={`font-mono font-extrabold ${isExpired ? 'text-rose-400' : 'text-white'}`}>{timeFormatted}</span></span>
           </div>
+          {isExpired && (
+            <div className="text-xs text-rose-400 font-bold animate-pulse">⚠ Waktu reservasi habis. Silakan buat pesanan baru.</div>
+          )}
           <div className="text-xs text-slate-400">Total Tagihan Resmi Kas Negara:</div>
           <div className="text-3xl sm:text-4xl font-black text-amber-400 font-mono tracking-tight">
             {formatIDR(booking.total_amount)}
@@ -197,11 +222,11 @@ export default function PaymentPage({ params }) {
             <div className="p-6 rounded-2xl bg-white text-slate-950 flex flex-col items-center text-center shadow-xl">
               <div className="font-black text-xs tracking-wider uppercase mb-3">QRIS STANDAR PEMBAYARAN NASIONAL</div>
               <div className="w-56 h-56 bg-slate-50 rounded-2xl flex items-center justify-center border border-slate-300 p-2 shadow-inner">
-                <img
-                  src={`https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(booking.qr_string || 'TNBTS-QRIS')}`}
-                  alt="QRIS Barcode"
-                  className="w-52 h-52 object-contain"
-                />
+                {qrDataUrl ? (
+                  <img src={qrDataUrl} alt="QRIS Barcode" className="w-52 h-52 object-contain" />
+                ) : (
+                  <div className="w-52 h-52 flex items-center justify-center text-xs text-slate-400 animate-pulse">Memuat QRIS...</div>
+                )}
               </div>
               <p className="text-xs text-slate-600 mt-3 font-medium">
                 Pindai menggunakan BCA Mobile, Livin Mandiri, BRImo, GoPay, OVO, ShopeePay, DANA.
@@ -232,12 +257,16 @@ export default function PaymentPage({ params }) {
           <div className="pt-2 space-y-3">
             <button
               type="button"
-              disabled={isProcessing}
+              disabled={isProcessing || isExpired}
               onClick={handleConfirmPayment}
-              className="w-full py-4 px-6 rounded-2xl bg-gradient-to-r from-emerald-500 via-emerald-400 to-teal-400 hover:from-emerald-400 text-slate-950 font-black text-sm flex items-center justify-center gap-2.5 shadow-xl shadow-emerald-500/25 transition-all hover:scale-[1.01] active:scale-[0.99] cursor-pointer"
+              className={`w-full py-4 px-6 rounded-2xl font-black text-sm flex items-center justify-center gap-2.5 shadow-xl transition-all hover:scale-[1.01] active:scale-[0.99] cursor-pointer ${
+                isExpired
+                  ? 'bg-slate-700 text-slate-400 cursor-not-allowed shadow-none'
+                  : 'bg-gradient-to-r from-emerald-500 via-emerald-400 to-teal-400 hover:from-emerald-400 text-slate-950 shadow-emerald-500/25'
+              }`}
             >
               <CheckCircle2 className="w-5 h-5 stroke-[2.5]" />
-              <span>{isProcessing ? 'Menerbitkan Tiket Digital...' : '⚡ Konfirmasi Pembayaran (Simulasi Langsung)'}</span>
+              <span>{isProcessing ? 'Menerbitkan Tiket Digital...' : isExpired ? 'Reservasi Kedaluwarsa' : '⚡ Konfirmasi Pembayaran (Simulasi Langsung)'}</span>
             </button>
             <p className="text-center text-xs text-emerald-400 font-medium">
               Mode Simulasi Sandbox: Klik tombol hijau di atas untuk melunasi tagihan dan langsung membuka E-Ticket resmi.

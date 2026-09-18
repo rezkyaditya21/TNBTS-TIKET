@@ -1,25 +1,39 @@
 import db from './db.js';
 import crypto from 'crypto';
 
-// In-memory rate limiter sliding window
-const rateLimitStore = new Map();
-
+// Persistent SQLite-based rate limiter — survives server restarts
 export function checkRateLimit(key, maxRequests = 25, windowMs = 60000) {
   const now = Date.now();
-  let record = rateLimitStore.get(key);
 
-  if (!record || now - record.startTime > windowMs) {
-    record = { count: 1, startTime: now };
-    rateLimitStore.set(key, record);
-    return { allowed: true, remaining: maxRequests - 1 };
-  }
+  const result = db.transaction(() => {
+    // Cleanup expired entries
+    db.prepare('DELETE FROM rate_limit_entries WHERE (window_start + window_ms) < ?').run(now);
 
-  record.count++;
-  if (record.count > maxRequests) {
-    return { allowed: false, remaining: 0, retryAfter: Math.ceil((record.startTime + windowMs - now) / 1000) };
-  }
+    const entry = db.prepare('SELECT * FROM rate_limit_entries WHERE key = ?').get(key);
 
-  return { allowed: true, remaining: maxRequests - record.count };
+    if (!entry) {
+      db.prepare('INSERT INTO rate_limit_entries (key, count, window_start, window_ms) VALUES (?, 1, ?, ?)').run(key, now, windowMs);
+      return { allowed: true, remaining: maxRequests - 1 };
+    }
+
+    // Window expired — reset
+    if (now - entry.window_start > entry.window_ms) {
+      db.prepare('UPDATE rate_limit_entries SET count = 1, window_start = ?, window_ms = ? WHERE key = ?').run(now, windowMs, key);
+      return { allowed: true, remaining: maxRequests - 1 };
+    }
+
+    const newCount = entry.count + 1;
+    db.prepare('UPDATE rate_limit_entries SET count = ? WHERE key = ?').run(newCount, key);
+
+    if (newCount > maxRequests) {
+      const retryAfter = Math.ceil((entry.window_start + entry.window_ms - now) / 1000);
+      return { allowed: false, remaining: 0, retryAfter };
+    }
+
+    return { allowed: true, remaining: maxRequests - newCount };
+  })();
+
+  return result;
 }
 
 /**

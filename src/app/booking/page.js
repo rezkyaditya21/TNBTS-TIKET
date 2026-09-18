@@ -16,10 +16,16 @@ function BookingContent() {
   const [destinations, setDestinations] = useState([]);
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
+  const [pageOpenedAt] = useState(Date.now()); // for anti-bot timing
 
   // Form State
   const [destinationId, setDestinationId] = useState(queryDest || 'dest-1');
-  const [visitDate, setVisitDate] = useState(queryDate || new Date().toISOString().split('T')[0]);
+  const minDate = (() => {
+    const d = new Date();
+    d.setDate(d.getDate() + 2);
+    return d.toISOString().split('T')[0];
+  })();
+  const [visitDate, setVisitDate] = useState(queryDate && queryDate >= minDate ? queryDate : minDate);
   const [slotId, setSlotId] = useState('');
   const [entranceGate, setEntranceGate] = useState('CEMORO_LAWANG');
   const [vehicleType, setVehicleType] = useState('JEEP');
@@ -147,6 +153,7 @@ function BookingContent() {
             identityNumber: v.identityNumber.trim(),
             citizenship: v.citizenship,
           })),
+          formFillDurationMs: Date.now() - pageOpenedAt,
         }),
       });
 
@@ -275,7 +282,7 @@ function BookingContent() {
                   <label className="block text-xs font-bold uppercase text-slate-400 mb-1.5">Tanggal Kunjungan</label>
                   <input
                     type="date"
-                    min={new Date().toISOString().split('T')[0]}
+                    min={minDate}
                     value={visitDate}
                     onChange={(e) => setVisitDate(e.target.value)}
                     className="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-sm font-semibold text-white focus:outline-none focus:border-amber-400"

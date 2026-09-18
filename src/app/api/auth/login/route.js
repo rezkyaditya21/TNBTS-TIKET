@@ -35,13 +35,13 @@ export async function POST(request) {
       token: result.token,
     });
 
-    // Set cookie
+    // Set cookie — httpOnly prevents XSS token theft
     response.cookies.set('tnbts_token', result.token, {
-      httpOnly: false, // accessible to client for Authorization header fallback
+      httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
+      sameSite: 'strict',
       path: '/',
-      maxAge: 60 * 60 * 24 * 7, // 7 days
+      maxAge: 60 * 60 * 24, // 24 hours
     });
 
     return response;

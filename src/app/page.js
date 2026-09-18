@@ -50,8 +50,10 @@ export default function HomePage() {
     loadData();
   }, []);
 
-  const handleLogout = () => {
-    document.cookie = 'tnbts_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+  const handleLogout = async () => {
+    try {
+      await fetch('/api/auth/logout', { method: 'POST' });
+    } catch {}
     setCurrentUser(null);
   };
 
@@ -86,7 +88,6 @@ export default function HomePage() {
         currentUser={currentUser}
         onOpenLogin={() => setIsAuthOpen(true)}
         onLogout={handleLogout}
-        onSelectRoleQuickSwitch={handleQuickRoleSwitch}
         systemStatus={systemStatus}
       />
 
