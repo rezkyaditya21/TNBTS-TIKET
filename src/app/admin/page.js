@@ -28,13 +28,13 @@ export default function AdminDashboardPage() {
 
       const dashData = await dashRes.json();
       const secData = await secRes.json();
-      const setData = await setRes.json();
+      const settingsData = await setRes.json();
 
       if (dashData.success) setData(dashData);
       if (secData.success) setSecurityEvents(secData.events || []);
-      if (setData.success) {
-        const sk = setData.settings?.find(s => s.key === 'status_kawasan')?.value || 'OPEN';
-        const sn = setData.settings?.find(s => s.key === 'status_kawasan_notice')?.value || '';
+      if (settingsData.success) {
+        const sk = settingsData.settings?.find(s => s.key === 'status_kawasan')?.value || 'OPEN';
+        const sn = settingsData.settings?.find(s => s.key === 'status_kawasan_notice')?.value || '';
         setStatusKawasan(sk);
         setStatusNotice(sn);
       }
